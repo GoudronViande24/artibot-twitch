@@ -1,0 +1,36 @@
+{
+  "name": "artibot-twitch",
+  "version": "3.1.0",
+  "description": "Send Twitch stream notification to Discord with Artibot",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GoudronViande24/artibot-twitch.git"
+  },
+  "keywords": [
+    "twitch",
+    "notifications",
+    "monitor",
+    "discord",
+    "artivain",
+    "artibot",
+    "api",
+    "stream"
+  ],
+  "author": "GoudronViande24",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/GoudronViande24/artibot-twitch/issues"
+  },
+  "homepage": "https://github.com/GoudronViande24/artibot-twitch#readme",
+  "dependencies": {
+    "artibot": "^3.0.3",
+    "axios": "^0.27.2",
+    "humanize-duration": "^3.27.1",
+    "moment": "^2.29.3"
+  }
+}
