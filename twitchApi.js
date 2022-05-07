@@ -15,10 +15,13 @@ class TwitchApi {
 		if (!this.config.twitch.private.token) this.generateToken();
 	}
 
-	static get requestOptions() {
+	static async requestOptions() {
 		// Automatically remove "oauth:" prefix if it's present
 		const oauthPrefix = "oauth:";
 		let oauthBearer = this.config.twitch.private.token;
+
+		if (!oauthBearer) oauthBearer = await this.generateToken();
+
 		if (oauthBearer.startsWith(oauthPrefix)) {
 			oauthBearer = oauthBearer.substr(oauthPrefix.length);
 		}
@@ -48,7 +51,7 @@ class TwitchApi {
 
 	static fetchStreams(channelNames) {
 		return new Promise((resolve, reject) => {
-			axios.get(`/streams?user_login=${channelNames.join('&user_login=')}`, this.requestOptions)
+			axios.get(`/streams?user_login=${channelNames.join('&user_login=')}`, await this.requestOptions())
 				.then((res) => {
 					resolve(res.data.data || []);
 				})
@@ -61,7 +64,7 @@ class TwitchApi {
 
 	static fetchUsers(channelNames) {
 		return new Promise((resolve, reject) => {
-			axios.get(`/users?login=${channelNames.join('&login=')}`, this.requestOptions)
+			axios.get(`/users?login=${channelNames.join('&login=')}`, await this.requestOptions())
 				.then((res) => {
 					resolve(res.data.data || []);
 				})
@@ -74,7 +77,7 @@ class TwitchApi {
 
 	static fetchGames(gameIds) {
 		return new Promise((resolve, reject) => {
-			axios.get(`/games?id=${gameIds.join('&id=')}`, this.requestOptions)
+			axios.get(`/games?id=${gameIds.join('&id=')}`, await this.requestOptions())
 				.then((res) => {
 					resolve(res.data.data || []);
 				})
@@ -85,25 +88,35 @@ class TwitchApi {
 		});
 	}
 
-	static generateToken() {
+	static async generateToken() {
+		if (this.creatingToken) return;
+		this.creatingToken = true;
+
 		const { clientId, clientSecret } = this.config.twitch.private;
 
 		this.logToConsole("TwitchMonitor", this.localizer._("Creating new access token..."));
 
-		axios.post("https://id.twitch.tv/oauth2/token", {
-			"client_id": clientId,
-			"client_secrect": clientSecret,
-			"grant_type": "client_credentials"
-		}, {
-			headers: {
-				"User-Agent": `Artibot/${this.artibot.version} artibot-twitch/${this.artibot.modules.find(module => module.id = "twitch").version}`
-			}
-		}).then(res => {
+		try {
+			const res = await axios.post("https://id.twitch.tv/oauth2/token", {
+				"client_id": clientId,
+				"client_secrect": clientSecret,
+				"grant_type": "client_credentials"
+			}, {
+				headers: {
+					"User-Agent": `Artibot/${this.artibot.version} artibot-twitch/${this.artibot.modules.find(module => module.id = "twitch").version}`
+				}
+			});
+
 			this.config.twitch.private.token = res.data["access_token"];
-		}).catch(err => {
+		} catch (err) {
 			this.logToConsole("TwitchMonitor", this.localizer._("An error occured while creating access token: ") + err, "err");
-		});
+		} finally {
+			this.creatingToken = false;
+			return this.config.twitch.private.token;
+		}
 	}
+
+	creatingToken = false;
 }
 
 export default TwitchApi;
