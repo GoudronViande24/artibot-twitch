@@ -152,6 +152,14 @@
 
 		"Config is invalid": {
 			"fr": "La configuration est invalide"
+		},
+
+		"An error occured while creating access token: ": {
+			"fr": "Une erreur est survenue lors de la création du token de connexion: "
+		},
+
+		"Creating new access token...": {
+			"fr": "Création d'un nouveau token de connexion..."
 		}
 	}
 }

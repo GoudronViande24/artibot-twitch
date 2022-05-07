@@ -41,7 +41,8 @@ export default new Module({
  * Main function for this module
  * @param {Artibot} artibot
  */
-async function execute({ client, config, config: { lang }, log }) {
+async function execute(artibot) {
+	let { client, config, config: { lang }, log } = artibot;
 	const localizer = new Localizer({
 		filePath: join(__dirname, "locales.json"),
 		lang
@@ -60,9 +61,9 @@ async function execute({ client, config, config: { lang }, log }) {
 	if (!config.twitch.colors.offline) config.twitch.colors.offline = "GREY";
 
 	// Check if token and client ID are correct
-	if (!config.twitch.private || typeof config.twitch.private != "object" || !config.twitch.private.token || !config.twitch.private.clientId) return invalidConfig();
+	if (!config.twitch.private || typeof config.twitch.private != "object" || !config.twitch.private.clientSecret || !config.twitch.private.clientId) return invalidConfig();
 
-	TwitchMonitor.init(log, localizer, config);
+	TwitchMonitor.init(log, localizer, config, artibot);
 
 	let targetChannels = [];
 

@@ -1,12 +1,18 @@
+import Artibot from 'artibot';
 import axios from 'axios';
 
 // Twitch Helix API helper ("New Twitch API").
 
 class TwitchApi {
-	static init(log, localizer, config) {
+	static init(log, localizer, config, artibot) {
 		this.logToConsole = log;
 		this.localizer = localizer;
 		this.config = config;
+
+		/** @type {Artibot} */
+		this.artibot = artibot;
+
+		if (!this.config.twitch.private.token) this.generateToken();
 	}
 
 	static get requestOptions() {
@@ -30,7 +36,11 @@ class TwitchApi {
 		const res = err.response || {};
 
 		if (res.data && res.data.message) {
-			this.logToConsole('TwitchMonitor', this.localizer.__("API request failed with Helix error: [[0]] ([[1]]/[[2]])", { placeholders: [res.data.message, res.data.error, res.data.status] }), "error");
+			if (res.data.status == 401) {
+				this.generateToken();
+			} else {
+				this.logToConsole('TwitchMonitor', this.localizer.__("API request failed with Helix error: [[0]] ([[1]]/[[2]])", { placeholders: [res.data.message, res.data.error, res.data.status] }), "error");
+			}
 		} else {
 			this.logToConsole('TwitchMonitor', this.localizer._("API request failed with error: ") + (err.message || err), "error");
 		}
@@ -72,6 +82,26 @@ class TwitchApi {
 					this.handleApiError(err);
 					reject(err);
 				});
+		});
+	}
+
+	static generateToken() {
+		const { clientId, clientSecret } = this.config.twitch.private;
+
+		this.logToConsole("TwitchMonitor", this.localizer._("Creating new access token..."));
+
+		axios.post("https://id.twitch.tv/oauth2/token", {
+			"client_id": clientId,
+			"client_secrect": clientSecret,
+			"grant_type": "client_credentials"
+		}, {
+			headers: {
+				"User-Agent": `Artibot/${this.artibot.version} artibot-twitch/${this.artibot.modules.find(module => module.id = "twitch").version}`
+			}
+		}).then(res => {
+			this.config.twitch.private.token = res.data["access_token"];
+		}).catch(err => {
+			this.logToConsole("TwitchMonitor", this.localizer._("An error occured while creating access token: ") + err, "err");
 		});
 	}
 }

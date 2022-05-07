@@ -6,7 +6,7 @@ import moment from 'moment';
 let debug;
 
 class TwitchMonitor {
-	static init(log, localizer, config) {
+	static init(log, localizer, config, artibot) {
 		this.logToConsole = log;
 		this.localizer = localizer;
 
@@ -26,7 +26,7 @@ class TwitchMonitor {
 
 		debug = config.debug;
 
-		TwitchApi.init(log, localizer, config);
+		TwitchApi.init(log, localizer, config, artibot);
 	}
 
 	static start() {
