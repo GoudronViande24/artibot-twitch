@@ -9,7 +9,7 @@ class LiveEmbed {
 		const allowBoxArt = config.showGameIcon;
 
 		let msgEmbed = createEmbed()
-			.setColor(isLive ? config.twitch.colors.live : config.twitch.colors.offline)
+			.setColor(isLive ? config.colors.live : config.colors.offline)
 			.setURL(`https://twitch.tv/${streamData.user_name.toLowerCase()}`);
 
 		// Thumbnail
