@@ -5,6 +5,7 @@ class LiveEmbed {
 	static createForStream(streamData, config, localizer, createEmbed) {
 		const locale = config.lang;
 		const isLive = streamData.type === "live";
+		config = config.twitch;
 		const allowBoxArt = config.showGameIcon;
 
 		let msgEmbed = createEmbed()
