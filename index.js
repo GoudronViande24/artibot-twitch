@@ -47,8 +47,17 @@ async function execute({ client, config, config: { lang }, log }) {
 		lang
 	});
 
+	const invalidConfig = () => log("TwitchMonitor", localizer._("Config is invalid"), "err");
+
 	// Check if config is correct
 	if (!config.twitch) return log("TwitchMonitor", localizer._("Cannot load config"), "err");
+	if (!config.twitch.checkInterval || config.twitch.checkInterval < 1000) config.twitch.checkInterval = 60000;
+	if (!config.twitch.notificationChannel || typeof config.twitch.notificationChannel != "string") return invalidConfig();
+	if (!config.twitch.twitchChannels || typeof config.twitch.twitchChannels != "object" || !config.twitch.twitchChannels.length) return invalidConfig();
+	if (!config.twitch.mentions || typeof config.twitch.mentions != "object") config.twitch.mentions = {};
+	if (!config.twitch.colors || typeof config.twitch.colors != "object") config.twitch.colors = {};
+	if (!config.twitch.colors.live) config.twitch.colors.live = "#9146ff";
+	if (!config.twitch.colors.offline) config.twitch.colors.offline = "GREY";
 
 	TwitchMonitor.init(log, localizer, config);
 

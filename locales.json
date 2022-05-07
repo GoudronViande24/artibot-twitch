@@ -148,6 +148,10 @@
 
 		"Cannot load config": {
 			"fr": "Impossible de charger la configuration"
+		},
+
+		"Config is invalid": {
+			"fr": "La configuration est invalide"
 		}
 	}
 }
