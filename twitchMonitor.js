@@ -101,7 +101,7 @@ class TwitchMonitor {
 					this.handleStreamList(channels);
 				})
 				.catch((err) => {
-					this.logToConsole('TwitchMonitor', this.localizer._("An error occured while updating streams: "), err);
+					this.logToConsole('TwitchMonitor', this.localizer._("An error occured while updating streams: ") + err, "warn");
 				});
 		}
 	}
