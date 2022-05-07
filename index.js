@@ -63,7 +63,7 @@ async function execute(artibot) {
 	// Check if token and client ID are correct
 	if (!config.twitch.private || typeof config.twitch.private != "object" || !config.twitch.private.clientSecret || !config.twitch.private.clientId) return invalidConfig();
 
-	TwitchMonitor.init(log, localizer, config, artibot);
+	await TwitchMonitor.init(log, localizer, config, artibot);
 
 	let targetChannels = [];
 

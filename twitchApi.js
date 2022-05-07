@@ -4,7 +4,7 @@ import axios from 'axios';
 // Twitch Helix API helper ("New Twitch API").
 
 class TwitchApi {
-	static init(log, localizer, config, artibot) {
+	static async init(log, localizer, config, artibot) {
 		this.logToConsole = log;
 		this.localizer = localizer;
 		this.config = config;
@@ -12,7 +12,7 @@ class TwitchApi {
 		/** @type {Artibot} */
 		this.artibot = artibot;
 
-		if (!this.config.twitch.private.token) this.generateToken();
+		if (!this.config.twitch.private.token) await this.generateToken();
 	}
 
 	static async requestOptions() {
