@@ -20,7 +20,7 @@ class TwitchApi {
 		const oauthPrefix = "oauth:";
 		let oauthBearer = this.config.twitch.private.token;
 
-		if (!oauthBearer) oauthBearer = await this.generateToken();
+		if (!oauthBearer || typeof oauthBearer != "string") oauthBearer = await this.generateToken();
 
 		if (oauthBearer.startsWith(oauthPrefix)) {
 			oauthBearer = oauthBearer.substr(oauthPrefix.length);
@@ -88,6 +88,10 @@ class TwitchApi {
 		});
 	}
 
+	/**
+	 * Generate a new oAuth token to login to Twitch
+	 * @returns {Promise<string>}
+	 */
 	static async generateToken() {
 		if (this.creatingToken) return;
 		this.creatingToken = true;
