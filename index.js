@@ -59,6 +59,9 @@ async function execute({ client, config, config: { lang }, log }) {
 	if (!config.twitch.colors.live) config.twitch.colors.live = "#9146ff";
 	if (!config.twitch.colors.offline) config.twitch.colors.offline = "GREY";
 
+	// Check if token and client ID are correct
+	if (!config.twitch.private || typeof config.twitch.private != "object" || !config.twitch.private.token || !config.twitch.private.clientId) return invalidConfig();
+
 	TwitchMonitor.init(log, localizer, config);
 
 	let targetChannels = [];
