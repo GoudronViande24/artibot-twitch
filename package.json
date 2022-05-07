@@ -29,7 +29,6 @@
   "homepage": "https://github.com/GoudronViande24/artibot-twitch#readme",
   "dependencies": {
     "artibot": "^3.0.3",
-    "axios": "^0.27.2",
     "humanize-duration": "^3.27.1",
     "moment": "^2.29.3"
   }
