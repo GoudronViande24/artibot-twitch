@@ -1,25 +1,15 @@
-const { MessageEmbed } = require("discord.js");
-const moment = require('moment');
-const humanizeDuration = require("humanize-duration");
-const Localizer = require("artibot-localizer");
-const path = require("path");
-const config = require('./config.json');
-config.private = require("./private.json");
-const { locale } = require("../../config.json");
-
-const localizer = new Localizer({
-	lang: locale,
-	filePath: path.resolve(__dirname, "locales.json")
-});
+import moment from 'moment';
+import humanizeDuration from "humanize-duration";
 
 class LiveEmbed {
-	static createForStream(streamData) {
+	static createForStream(streamData, config, localizer, createEmbed) {
+		const locale = config.lang;
 		const isLive = streamData.type === "live";
 		const allowBoxArt = config.showGameIcon;
 
-		let msgEmbed = new MessageEmbed();
-		msgEmbed.setColor(isLive ? config.colors.live : config.colors.offline);
-		msgEmbed.setURL(`https://twitch.tv/${streamData.user_name.toLowerCase()}`);
+		let msgEmbed = createEmbed()
+			.setColor(isLive ? config.colors.live : config.colors.offline)
+			.setURL(`https://twitch.tv/${streamData.user_name.toLowerCase()}`);
 
 		// Thumbnail
 		let thumbUrl = streamData.profile_image_url;
@@ -81,4 +71,4 @@ class LiveEmbed {
 	}
 }
 
-module.exports = LiveEmbed;
+export default LiveEmbed;

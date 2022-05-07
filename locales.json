@@ -144,6 +144,10 @@
 
 		"Cannot send the announcement, another try will be done on next update.": {
 			"fr": "Impossible d'envoyer la notification, une autre tentative sera faite à la prochaine mise à jour."
+		},
+
+		"Cannot load config": {
+			"fr": "Impossible de charger la configuration"
 		}
 	}
 }

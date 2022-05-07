@@ -1,11 +1,12 @@
-const config = require('./config.json');
-config.private = require("./private.json");
-const TwitchApi = require('./twitchApi');
-const MiniDb = require('./miniDb');
-const moment = require('moment');
+import TwitchApi from './twitchApi.js';
+import MiniDb from './miniDb.js';
+import moment from 'moment';
+
+/** @type {Boolean} */
+let debug;
 
 class TwitchMonitor {
-	static init(log, localizer) {
+	static init(log, localizer, config) {
 		this.logToConsole = log;
 		this.localizer = localizer;
 
@@ -19,18 +20,22 @@ class TwitchMonitor {
 		this._pendingGameRefresh = false;
 		this._gameData = this._gameDb.get("game-list") || {};
 		this._watchingGameIds = [];
+
+		this.channelNames = config.twitch.twitchChannels;
+		this.checkInterval = config.twitch.checkInterval;
+
+		debug = config.debug;
 	}
 
 	static start() {
 		// Load channel names from config
-		this.channelNames = config.twitchChannels;
 		if (!this.channelNames.length) {
 			this.logToConsole('TwitchMonitor', this.localizer._("No channels to listen to. Maybe you should disable this module in the config to free up some system resources."), "warn");
 			return;
 		}
 
 		// Configure polling interval
-		let checkIntervalMs = parseInt(config.checkInterval);
+		let checkIntervalMs = parseInt(this.checkInterval);
 		if (isNaN(checkIntervalMs) || checkIntervalMs < TwitchMonitor.MIN_POLL_INTERVAL_MS) {
 			// Enforce minimum poll interval to help avoid rate limits
 			checkIntervalMs = TwitchMonitor.MIN_POLL_INTERVAL_MS;
@@ -55,7 +60,7 @@ class TwitchMonitor {
 
 	static refresh(reason) {
 		const now = moment();
-		if (config.debug) this.logToConsole('TwitchMonitor', `${this.localizer._("Refreshing")} (${reason ? reason : this.localizer._("No reason")})`);
+		if (debug) this.logToConsole('TwitchMonitor', `${this.localizer._("Refreshing")} (${reason ? reason : this.localizer._("No reason")})`);
 
 		// Refresh all users periodically
 		if (this._lastUserRefresh === null || now.diff(moment(this._lastUserRefresh), 'minutes') >= 10) {
@@ -114,7 +119,7 @@ class TwitchMonitor {
 		});
 
 		if (gotChannelNames.length) {
-			if (config.debug) this.logToConsole('TwitchMonitor', this.localizer._("Updating users data: ") + gotChannelNames.join(', '), "debug");
+			if (debug) this.logToConsole('TwitchMonitor', this.localizer._("Updating users data: ") + gotChannelNames.join(', '), "debug");
 		}
 
 		this._lastUserRefresh = moment();
@@ -136,7 +141,7 @@ class TwitchMonitor {
 		});
 
 		if (gotGameNames.length) {
-			if (config.debug) this.logToConsole('TwitchMonitor', this.localizer._("Updating games data: ") + gotGameNames.join(', '), "debug");
+			if (debug) this.logToConsole('TwitchMonitor', this.localizer._("Updating games data: ") + gotGameNames.join(', '), "debug");
 		}
 
 		this._lastGameRefresh = moment();
@@ -258,4 +263,4 @@ TwitchMonitor.channelOfflineCallbacks = [];
 
 TwitchMonitor.MIN_POLL_INTERVAL_MS = 30000;
 
-module.exports = TwitchMonitor;
+export default TwitchMonitor;

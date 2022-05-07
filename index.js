@@ -10,10 +10,10 @@ const __dirname = path.dirname(__filename);
 const require = createRequire(import.meta.url);
 const { version } = require('./package.json');
 
-import TwitchMonitor from "./twitchMonitor";
-import MiniDb from "./miniDb";
-import LiveEmbed from "./liveEmbed";
-import DiscordChannelSync from "./discordChannelSync";
+import TwitchMonitor from "./twitchMonitor.js";
+import MiniDb from "./miniDb.js";
+import LiveEmbed from "./liveEmbed.js";
+import DiscordChannelSync from "./discordChannelSync.js";
 
 /** 
  * TwitchMonitor Module for Artibot
@@ -41,15 +41,16 @@ export default new Module({
  * Main function for this module
  * @param {Artibot} artibot
  */
-async function execute({ config: { lang } }) {
+async function execute({ client, config, config: { lang }, log }) {
 	const localizer = new Localizer({
 		filePath: join(__dirname, "locales.json"),
 		lang
 	});
 
-	config.twitch = require("./config.json");
-	config.twitch.private = require("./private.json");
-	TwitchMonitor.init(log, localizer);
+	// Check if config is correct
+	if (!config.twitch) return log(localizer._("Cannot load config"));
+
+	TwitchMonitor.init(log, localizer, config);
 
 	let targetChannels = [];
 
@@ -101,7 +102,7 @@ async function execute({ config: { lang } }) {
 
 		// Generate message
 		const msgFormatted = localizer.__("**[[0]]** is live on Twitch!", { placeholders: [streamData.user_name] });
-		const msgEmbed = LiveEmbed.createForStream(streamData);
+		const msgEmbed = LiveEmbed.createForStream(streamData, config, localizer, createEmbed);
 
 		// Broadcast to all target channels
 		let anySent = false;
@@ -270,11 +271,11 @@ async function execute({ config: { lang } }) {
 	// Begin Twitch API polling
 	TwitchMonitor.start();
 
-	client.on("guildCreate", guild => {
+	client.on("guildCreate", () => {
 		syncServerList(true);
 	});
 
-	client.on("guildDelete", guild => {
+	client.on("guildDelete", () => {
 		syncServerList(true);
 	});
 }

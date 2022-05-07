@@ -1,21 +1,21 @@
-const fs = require('fs');
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 
 class MiniDb {
 	constructor(name, log, localizer) {
 		this.logToConsole = log;
 		this.localizer = localizer;
-		this.basePath = `${__dirname}/data/`;
+		this.basePath = `./data/twitch/`;
 
-		if (!fs.existsSync(this.basePath)) {
+		if (!existsSync(this.basePath)) {
 			this.logToConsole('TwitchMonitor', this.localizer.__("Creating directory for minidb: [[0]]", { placeholders: [this.basePath] }));
-			fs.mkdirSync(this.basePath);
+			mkdirSync(this.basePath);
 		}
 
-		this.basePath = `${__dirname}/data/${name}`;
+		this.basePath = `./data/twitch/${name}`;
 
-		if (!fs.existsSync(this.basePath)) {
+		if (!existsSync(this.basePath)) {
 			this.logToConsole('TwitchMonitor', this.localizer.__("Creating directory for minidb: [[0]]", { placeholders: [this.basePath] }));
-			fs.mkdirSync(this.basePath);
+			mkdirSync(this.basePath);
 		}
 	}
 
@@ -23,8 +23,8 @@ class MiniDb {
 		const filePath = `${this.basePath}/${id}.json`;
 
 		try {
-			if (fs.existsSync(filePath)) {
-				const raw = fs.readFileSync(filePath, {
+			if (existsSync(filePath)) {
+				const raw = readFileSync(filePath, {
 					encoding: 'utf8',
 					flag: 'r'
 				});
@@ -41,7 +41,7 @@ class MiniDb {
 
 		try {
 			const raw = JSON.stringify(value);
-			fs.writeFileSync(filePath, raw, {
+			writeFileSync(filePath, raw, {
 				encoding: 'utf8',
 				mode: '666',
 				flag: 'w'
@@ -54,4 +54,4 @@ class MiniDb {
 	}
 }
 
-module.exports = MiniDb;
+export default MiniDb;

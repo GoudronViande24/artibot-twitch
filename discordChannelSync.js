@@ -43,4 +43,4 @@ class DiscordChannelSync {
 	}
 }
 
-module.exports = DiscordChannelSync;
+export default DiscordChannelSync;

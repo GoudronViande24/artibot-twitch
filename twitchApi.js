@@ -1,19 +1,18 @@
-const axios = require('axios');
-const config = require("./config.json");
-config.private = require("./private.json");
+import { get } from 'axios';
 
 // Twitch Helix API helper ("New Twitch API").
 
 class TwitchApi {
-	static init(log, localizer) {
+	static init(log, localizer, config) {
 		this.logToConsole = log;
 		this.localizer = localizer;
+		this.config = config;
 	}
 
 	static get requestOptions() {
 		// Automatically remove "oauth:" prefix if it's present
 		const oauthPrefix = "oauth:";
-		let oauthBearer = config.private.token;
+		let oauthBearer = this.config.twitch.private.token;
 		if (oauthBearer.startsWith(oauthPrefix)) {
 			oauthBearer = oauthBearer.substr(oauthPrefix.length);
 		}
@@ -21,7 +20,7 @@ class TwitchApi {
 		return {
 			baseURL: "https://api.twitch.tv/helix/",
 			headers: {
-				"Client-ID": config.private.clientId,
+				"Client-ID": this.config.twitch.private.clientId,
 				"Authorization": `Bearer ${oauthBearer}`
 			}
 		};
@@ -39,7 +38,7 @@ class TwitchApi {
 
 	static fetchStreams(channelNames) {
 		return new Promise((resolve, reject) => {
-			axios.get(`/streams?user_login=${channelNames.join('&user_login=')}`, this.requestOptions)
+			get(`/streams?user_login=${channelNames.join('&user_login=')}`, this.requestOptions)
 				.then((res) => {
 					resolve(res.data.data || []);
 				})
@@ -52,7 +51,7 @@ class TwitchApi {
 
 	static fetchUsers(channelNames) {
 		return new Promise((resolve, reject) => {
-			axios.get(`/users?login=${channelNames.join('&login=')}`, this.requestOptions)
+			get(`/users?login=${channelNames.join('&login=')}`, this.requestOptions)
 				.then((res) => {
 					resolve(res.data.data || []);
 				})
@@ -65,7 +64,7 @@ class TwitchApi {
 
 	static fetchGames(gameIds) {
 		return new Promise((resolve, reject) => {
-			axios.get(`/games?id=${gameIds.join('&id=')}`, this.requestOptions)
+			get(`/games?id=${gameIds.join('&id=')}`, this.requestOptions)
 				.then((res) => {
 					resolve(res.data.data || []);
 				})
@@ -77,4 +76,4 @@ class TwitchApi {
 	}
 }
 
-module.exports = TwitchApi;
+export default TwitchApi;
