@@ -25,6 +25,8 @@ class TwitchMonitor {
 		this.checkInterval = config.twitch.checkInterval;
 
 		debug = config.debug;
+
+		TwitchApi.init(log, localizer, config);
 	}
 
 	static start() {
