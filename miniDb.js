@@ -4,18 +4,18 @@ class MiniDb {
 	constructor(name, log, localizer) {
 		this.logToConsole = log;
 		this.localizer = localizer;
-		this.basePath = `./data/twitch/`;
+		this.basePath = "./data/twitch/";
 
 		if (!existsSync(this.basePath)) {
 			this.logToConsole('TwitchMonitor', this.localizer.__("Creating directory for minidb: [[0]]", { placeholders: [this.basePath] }));
-			mkdirSync(this.basePath);
+			mkdirSync(this.basePath, { recursive: true });
 		}
 
 		this.basePath = `./data/twitch/${name}`;
 
 		if (!existsSync(this.basePath)) {
 			this.logToConsole('TwitchMonitor', this.localizer.__("Creating directory for minidb: [[0]]", { placeholders: [this.basePath] }));
-			mkdirSync(this.basePath);
+			mkdirSync(this.basePath, { recursive: true });
 		}
 	}
 
