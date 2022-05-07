@@ -42,7 +42,7 @@ export default new Module({
  * @param {Artibot} artibot
  */
 async function execute(artibot) {
-	let { client, config, config: { lang }, log } = artibot;
+	let { client, config, config: { lang }, log, createEmbed } = artibot;
 	const localizer = new Localizer({
 		filePath: join(__dirname, "locales.json"),
 		lang

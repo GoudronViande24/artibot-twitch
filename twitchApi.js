@@ -113,8 +113,6 @@ class TwitchApi {
 				}
 			});
 
-			console.log(res);
-
 			this.config.twitch.private.token = res.data["access_token"];
 		} catch (err) {
 			this.logToConsole("TwitchMonitor", this.localizer._("An error occured while creating access token: ") + err, "err");
