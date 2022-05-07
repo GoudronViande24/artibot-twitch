@@ -101,13 +101,15 @@ class TwitchApi {
 		this.logToConsole("TwitchMonitor", this.localizer._("Creating new access token..."));
 
 		try {
-			const res = await axios.post("https://id.twitch.tv/oauth2/token", {
-				"client_id": clientId,
-				"client_secrect": clientSecret,
-				"grant_type": "client_credentials"
-			}, {
+			const body = new URLSearchParams();
+			body.append("client_id", clientId);
+			body.append("client_secret", clientSecret);
+			body.append("grant_type", "client_credentials");
+
+			const res = await axios.post("https://id.twitch.tv/oauth2/token", body, {
 				headers: {
-					"User-Agent": `Artibot/${this.artibot.version} artibot-twitch/${this.artibot.modules.find(module => module.id = "twitch").version}`
+					"User-Agent": `Artibot/${this.artibot.version} artibot-twitch/${this.artibot.modules.find(module => module.id = "twitch").version}`,
+					"Content-Type": "application/x-www-form-urlencoded"
 				}
 			});
 
