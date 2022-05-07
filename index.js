@@ -48,7 +48,7 @@ async function execute({ client, config, config: { lang }, log }) {
 	});
 
 	// Check if config is correct
-	if (!config.twitch) return log(localizer._("Cannot load config"));
+	if (!config.twitch) return log("TwitchMonitor", localizer._("Cannot load config"), "err");
 
 	TwitchMonitor.init(log, localizer, config);
 
