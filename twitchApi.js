@@ -50,7 +50,7 @@ class TwitchApi {
 	}
 
 	static fetchStreams(channelNames) {
-		return new Promise((resolve, reject) => {
+		return new Promise(async (resolve, reject) => {
 			axios.get(`/streams?user_login=${channelNames.join('&user_login=')}`, await this.requestOptions())
 				.then((res) => {
 					resolve(res.data.data || []);
@@ -63,7 +63,7 @@ class TwitchApi {
 	}
 
 	static fetchUsers(channelNames) {
-		return new Promise((resolve, reject) => {
+		return new Promise(async (resolve, reject) => {
 			axios.get(`/users?login=${channelNames.join('&login=')}`, await this.requestOptions())
 				.then((res) => {
 					resolve(res.data.data || []);
@@ -76,7 +76,7 @@ class TwitchApi {
 	}
 
 	static fetchGames(gameIds) {
-		return new Promise((resolve, reject) => {
+		return new Promise(async (resolve, reject) => {
 			axios.get(`/games?id=${gameIds.join('&id=')}`, await this.requestOptions())
 				.then((res) => {
 					resolve(res.data.data || []);
