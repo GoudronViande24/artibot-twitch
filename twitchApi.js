@@ -1,4 +1,4 @@
-import { get } from 'axios';
+import axios from 'axios';
 
 // Twitch Helix API helper ("New Twitch API").
 
@@ -38,7 +38,7 @@ class TwitchApi {
 
 	static fetchStreams(channelNames) {
 		return new Promise((resolve, reject) => {
-			get(`/streams?user_login=${channelNames.join('&user_login=')}`, this.requestOptions)
+			axios.get(`/streams?user_login=${channelNames.join('&user_login=')}`, this.requestOptions)
 				.then((res) => {
 					resolve(res.data.data || []);
 				})
@@ -51,7 +51,7 @@ class TwitchApi {
 
 	static fetchUsers(channelNames) {
 		return new Promise((resolve, reject) => {
-			get(`/users?login=${channelNames.join('&login=')}`, this.requestOptions)
+			axios.get(`/users?login=${channelNames.join('&login=')}`, this.requestOptions)
 				.then((res) => {
 					resolve(res.data.data || []);
 				})
@@ -64,7 +64,7 @@ class TwitchApi {
 
 	static fetchGames(gameIds) {
 		return new Promise((resolve, reject) => {
-			get(`/games?id=${gameIds.join('&id=')}`, this.requestOptions)
+			axios.get(`/games?id=${gameIds.join('&id=')}`, this.requestOptions)
 				.then((res) => {
 					resolve(res.data.data || []);
 				})
