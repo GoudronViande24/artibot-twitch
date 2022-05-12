@@ -1,6 +1,6 @@
 {
   "name": "artibot-twitch",
-  "version": "3.1.0",
+  "version": "3.1.1",
   "description": "Send Twitch stream notification to Discord with Artibot",
   "main": "index.js",
   "type": "module",
@@ -28,7 +28,7 @@
   },
   "homepage": "https://github.com/GoudronViande24/artibot-twitch#readme",
   "dependencies": {
-    "artibot": "^3.0.3",
+    "artibot": "^3.0.5",
     "humanize-duration": "^3.27.1",
     "moment": "^2.29.3"
   }

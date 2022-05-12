@@ -108,7 +108,7 @@ class TwitchApi {
 
 			const res = await axios.post("https://id.twitch.tv/oauth2/token", body, {
 				headers: {
-					"User-Agent": `Artibot/${this.artibot.version} artibot-twitch/${this.artibot.modules.find(module => module.id = "twitch").version}`,
+					"User-Agent": `Artibot/${this.artibot.version} artibot-twitch/${this.artibot.modules.get("twitch").version}`,
 					"Content-Type": "application/x-www-form-urlencoded"
 				}
 			});
