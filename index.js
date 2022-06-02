@@ -61,7 +61,7 @@ async function execute(artibot) {
 	if (!config.twitch.colors.offline) config.twitch.colors.offline = "GREY";
 
 	// Check if token and client ID are correct
-	if (!config.twitch.private || typeof config.twitch.private != "object" || !config.twitch.private.clientSecret || !config.twitch.private.clientId) return invalidConfig();
+	if (!config.twitch.private || typeof config.twitch.private != "object" || !config.twitch.private.clientId) return invalidConfig();
 
 	await TwitchMonitor.init(log, localizer, config, artibot);
 
