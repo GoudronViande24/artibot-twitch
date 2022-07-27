@@ -1,4 +1,4 @@
-import { PermissionsBitField, Client, GuildBasedChannel } from "discord.js";
+import { PermissionsBitField, Client, GuildChannel } from "discord.js";
 
 /**
  * Helper class for syncing discord target channels.
@@ -8,7 +8,7 @@ class DiscordChannelSync {
 	 * @param {Client} client Discord.js client.
 	 * @param {string} channelName Name of the Discord channel we are looking for on each server (e.g. `config.discord_announce_channel`).
 	 * @param {boolean} verbose If true, log guild membership info to stdout (debug / info purposes).
-	 * @return {GuildBasedChannel[]} List of Discord.js channels
+	 * @return {GuildChannel[]} List of Discord.js channels
 	 */
 	static getChannelList(client, channelName, verbose, log, localizer) {
 		let nextTargetChannels = [];
