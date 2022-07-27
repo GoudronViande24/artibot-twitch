@@ -26,22 +26,26 @@ class LiveEmbed {
 		// Title
 		if (isLive) {
 			msgEmbed.setTitle(":red_circle: " + localizer.__("**[[0]] is live on Twitch!**", { placeholders: [streamData.user_name] }));
-			msgEmbed.addField(localizer._("Title"), streamData.title, false);
+			msgEmbed.addFields({ name: localizer._("Title"), value: streamData.title, inline: false });
 		} else {
 			msgEmbed.setTitle(":white_circle: " + localizer.__("[[0]] was live on Twitch.", { placeholders: [streamData.user_name] }));
 			msgEmbed.setDescription(localizer._("The stream has ended."));
 
-			msgEmbed.addField(localizer._("Title"), streamData.title, true);
+			msgEmbed.addFields({ name: localizer._("Title"), value: streamData.title, inline: true });
 		}
 
 		// Add game
 		if (streamData.game && config.showGame) {
-			msgEmbed.addField(localizer._("Game"), streamData.game.name, false);
+			msgEmbed.addFields({ name: localizer._("Game"), value: streamData.game.name, inline: false });
 		}
 
 		if (isLive) {
 			// Add status
-			if (config.showViews) msgEmbed.addField(localizer._("Viewers"), isLive ? localizer.__("Currently [[0]]", { placeholders: [streamData.viewer_count] }) : localizer._("The stream has ended."), true);
+			if (config.showViews) msgEmbed.addFields({
+				name: localizer._("Viewers"),
+				value: isLive ? localizer.__("Currently [[0]]", { placeholders: [streamData.viewer_count] }) : localizer._("The stream has ended."),
+				inline: true
+			});
 
 			// Set main image (stream preview)
 			if (config.showThumbnail) {
@@ -58,13 +62,17 @@ class LiveEmbed {
 				let now = moment();
 				let startedAt = moment(streamData.started_at);
 
-				msgEmbed.addField(localizer._("Online since"), humanizeDuration(now - startedAt, {
-					language: locale,
-					delimiter: ", ",
-					largest: 2,
-					round: true,
-					units: ["y", "mo", "w", "d", "h", "m"]
-				}), true);
+				msgEmbed.addFields({
+					name: localizer._("Online since"),
+					value: humanizeDuration(now - startedAt, {
+						language: locale,
+						delimiter: ", ",
+						largest: 2,
+						round: true,
+						units: ["y", "mo", "w", "d", "h", "m"]
+					}),
+					inline: true
+				});
 			}
 		}
 
