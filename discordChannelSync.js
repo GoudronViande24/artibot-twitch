@@ -1,3 +1,5 @@
+import { PermissionsBitField, Client, Channel } from "discord.js";
+
 /**
  * Helper class for syncing discord target channels.
  */
@@ -19,13 +21,13 @@ class DiscordChannelSync {
 					log('TwitchMonitor', localizer.__("Configuration error: The server [[0]] does not have a #[[1]] channel!", { placeholders: [guild.name, channelName] }));
 				};
 			} else {
-				let permissions = targetChannel.permissionsFor(guild.me);
+				let permissions = targetChannel.permissionsFor(guild.members.me);
 
 				if (verbose) {
 					log('TwitchMonitor', localizer.__(" --> for the [[0]] server, the announcements channel is #[[1]]", { placeholders: [guild.name, targetChannel.name] }));
 				};
 
-				if (!permissions.has("SEND_MESSAGES")) {
+				if (!permissions.has(PermissionsBitField.Flags.SendMessages)) {
 					if (verbose) {
 						log('TwitchMonitor', localizer.__("Configuration error: The bot does not have SEND_MESSAGES permission in #[[0]] channel on [[1]] server. The announcements will not be sent.", { placeholders: [targetChannel.name, guild.name] }));
 					};
