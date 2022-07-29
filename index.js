@@ -29,6 +29,7 @@ export default new Module({
 	version,
 	langs: ["fr", "en"],
 	repo: "GoudronViande24/artibot-twitch",
+	packageName: "artibot-twitch",
 	parts: [
 		new Global({
 			id: "twitch",

@@ -1,6 +1,6 @@
 {
   "name": "artibot-twitch",
-  "version": "4.0.0",
+  "version": "4.0.1",
   "description": "Send Twitch stream notification to Discord with Artibot",
   "main": "index.js",
   "type": "module",
