@@ -15,7 +15,7 @@ import MiniDb from "./miniDb.js";
 import LiveEmbed from "./liveEmbed.js";
 import DiscordChannelSync from "./discordChannelSync.js";
 
-/** 
+/**
  * TwitchMonitor Module for Artibot
  * Based on Timbot (https://github.com/roydejong/timbot), by roydejong (https://github.com/roydejong)
  * Most of the code is just adapted for this project.
@@ -59,7 +59,7 @@ async function execute(artibot) {
 	if (!config.twitch.mentions || typeof config.twitch.mentions != "object") config.twitch.mentions = {};
 	if (!config.twitch.colors || typeof config.twitch.colors != "object") config.twitch.colors = {};
 	if (!config.twitch.colors.live) config.twitch.colors.live = "#9146ff";
-	if (!config.twitch.colors.offline) config.twitch.colors.offline = "GREY";
+	if (!config.twitch.colors.offline) config.twitch.colors.offline = "Grey";
 
 	// Check if token and client ID are correct
 	if (!config.twitch.private || typeof config.twitch.private != "object" || !config.twitch.private.clientSecret || !config.twitch.private.clientId) return invalidConfig();
