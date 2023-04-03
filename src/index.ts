@@ -4,6 +4,7 @@ import { createRequire } from 'module';
 import path, { join } from "path";
 import { fileURLToPath } from "url";
 import { Client, GuildTextBasedChannel, EmbedBuilder } from "discord.js";
+export * from "./config.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
