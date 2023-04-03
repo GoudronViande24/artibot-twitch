@@ -68,7 +68,7 @@ export default class LiveEmbed {
 
 				msgEmbed.addFields({
 					name: localizer._("Online since"),
-					value: humanizeDuration(now.unix() - startedAt.unix(), {
+					value: humanizeDuration(now.diff(startedAt), {
 						language: locale,
 						delimiter: ", ",
 						largest: 2,
