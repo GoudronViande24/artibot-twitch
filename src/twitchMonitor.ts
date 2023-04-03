@@ -1,17 +1,50 @@
 import TwitchApi from './twitchApi.js';
 import MiniDb from './miniDb.js';
-import moment from 'moment';
+import moment, { Moment } from 'moment';
+import Localizer from 'artibot-localizer';
+import Artibot, { log } from 'artibot';
+import { Stream, hasEqualValues } from './index.js';
 
-/** @type {Boolean} */
-let debug;
+let debug: boolean;
 
-class TwitchMonitor {
-	static async init(log, localizer, config, artibot) {
-		this.logToConsole = log;
+export interface TwitchUser {
+	login: string;
+	display_name: string;
+}
+
+export interface TwitchGame {
+	id: string;
+	name: string;
+}
+
+export type CallbackFn = (stream: Stream, isOnline: boolean) => boolean | void;
+export type OfflineCallbackFn = (stream: Stream) => boolean | void;
+
+export default class TwitchMonitor {
+	static localizer: Localizer;
+	static channelNames: string[] = [];
+	static checkInterval: string;
+	static _userDb: MiniDb;
+	static _gameDb: MiniDb;
+	static _lastUserRefresh: any | null;
+	static _pendingUserRefresh: boolean;
+	static _userData: any;
+	static _pendingGameRefresh: boolean;
+	static _gameData: any;
+	static _watchingGameIds: string[];
+	static readonly MIN_POLL_INTERVAL_MS: number = 30000;
+	static activeStreams: string[] = [];
+	static streamData: { [key: string]: Stream } = {};
+	static channelLiveCallbacks: CallbackFn[] = [];
+	static channelOfflineCallbacks: OfflineCallbackFn[] = [];
+	static _lastGameRefresh: Moment;
+
+	static async init(localizer: Localizer, artibot: Artibot): Promise<void> {
+		const { config } = artibot;
 		this.localizer = localizer;
 
-		this._userDb = new MiniDb("twitch-users", this.logToConsole, this.localizer);
-		this._gameDb = new MiniDb("twitch-games", this.logToConsole, this.localizer);
+		this._userDb = new MiniDb("twitch-users", this.localizer);
+		this._gameDb = new MiniDb("twitch-games", this.localizer);
 
 		this._lastUserRefresh = this._userDb.get("last-update") || null;
 		this._pendingUserRefresh = false;
@@ -26,43 +59,43 @@ class TwitchMonitor {
 
 		debug = config.debug;
 
-		await TwitchApi.init(log, localizer, config, artibot);
+		await TwitchApi.init(localizer, artibot);
 	}
 
-	static start() {
+	static start(): void {
 		// Load channel names from config
 		if (!this.channelNames.length) {
-			this.logToConsole('TwitchMonitor', this.localizer._("No channels to listen to. Maybe you should disable this module in the config to free up some system resources."), "warn");
+			log('TwitchMonitor', this.localizer._("No channels to listen to. Maybe you should disable this module in the config to free up some system resources."), "warn");
 			return;
 		}
 
 		// Configure polling interval
-		let checkIntervalMs = parseInt(this.checkInterval);
+		let checkIntervalMs: number = parseInt(this.checkInterval);
 		if (isNaN(checkIntervalMs) || checkIntervalMs < TwitchMonitor.MIN_POLL_INTERVAL_MS) {
 			// Enforce minimum poll interval to help avoid rate limits
 			checkIntervalMs = TwitchMonitor.MIN_POLL_INTERVAL_MS;
 		}
-		setInterval(() => {
+		setInterval((): void => {
 			this.refresh(this.localizer._("Periodic check"));
 		}, checkIntervalMs + 1000);
 
 		// Immediate refresh after startup
-		setTimeout(() => {
+		setTimeout((): void => {
 			this.refresh(this.localizer._("Initial check"));
 		}, 1000);
 
 		// Ready!
-		this.logToConsole('TwitchMonitor', this.localizer.__("Listens to: [[0]] (Checks every [[1]]ms)", {
+		log('TwitchMonitor', this.localizer.__("Listens to: [[0]] (Checks every [[1]]ms)", {
 			placeholders: [
 				this.channelNames.join(', '),
-				checkIntervalMs
+				checkIntervalMs.toString()
 			]
 		}));
 	}
 
-	static refresh(reason) {
-		const now = moment();
-		if (debug) this.logToConsole('TwitchMonitor', `${this.localizer._("Refreshing")} (${reason ? reason : this.localizer._("No reason")})`);
+	static refresh(reason: string): void {
+		const now: Moment = moment();
+		if (debug) log('TwitchMonitor', `${this.localizer._("Refreshing")} (${reason ? reason : this.localizer._("No reason")})`);
 
 		// Refresh all users periodically
 		if (this._lastUserRefresh === null || now.diff(moment(this._lastUserRefresh), 'minutes') >= 10) {
@@ -71,13 +104,13 @@ class TwitchMonitor {
 					this.handleUserList(users);
 				})
 				.catch((err) => {
-					this.logToConsole('TwitchMonitor', this.localizer._("An error occured while updating the user: ") + err, "warn");
+					log('TwitchMonitor', this.localizer._("An error occured while updating the user: ") + err, "warn");
 				})
 				.then(() => {
 					if (this._pendingUserRefresh) {
 						this._pendingUserRefresh = false;
 					}
-				})
+				});
 		}
 
 		// Refresh all games if needed
@@ -87,7 +120,7 @@ class TwitchMonitor {
 					this.handleGameList(games);
 				})
 				.catch((err) => {
-					this.logToConsole('TwitchMonitor', this.localizer._("An error occured while updating the game: ") + err, "warn");
+					log('TwitchMonitor', this.localizer._("An error occured while updating the game: ") + err, "warn");
 				})
 				.then(() => {
 					if (this._pendingGameRefresh) {
@@ -103,15 +136,15 @@ class TwitchMonitor {
 					this.handleStreamList(channels);
 				})
 				.catch((err) => {
-					this.logToConsole('TwitchMonitor', this.localizer._("An error occured while updating streams: ") + err, "warn");
+					log('TwitchMonitor', this.localizer._("An error occured while updating streams: ") + err, "warn");
 				});
 		}
 	}
 
-	static handleUserList(users) {
-		let gotChannelNames = [];
+	static handleUserList(users: any[]): void {
+		let gotChannelNames: string[] = [];
 
-		users.forEach((user) => {
+		users.forEach((user: TwitchUser) => {
 			const channelName = user.login.toLowerCase();
 
 			let prevUserData = this._userData[channelName] || {};
@@ -120,9 +153,7 @@ class TwitchMonitor {
 			gotChannelNames.push(user.display_name);
 		});
 
-		if (gotChannelNames.length) {
-			if (debug) this.logToConsole('TwitchMonitor', this.localizer._("Updating users data: ") + gotChannelNames.join(', '), "debug");
-		}
+		if (gotChannelNames.length && debug) log('TwitchMonitor', this.localizer._("Updating users data: ") + gotChannelNames.join(', '), "debug");
 
 		this._lastUserRefresh = moment();
 
@@ -130,20 +161,20 @@ class TwitchMonitor {
 		this._userDb.put("user-list", this._userData);
 	}
 
-	static handleGameList(games) {
-		let gotGameNames = [];
+	static handleGameList(games: TwitchGame[]): void {
+		const gotGameNames: string[] = [];
 
-		games.forEach((game) => {
+		for (const game of games) {
 			const gameId = game.id;
 
-			let prevGameData = this._gameData[gameId] || {};
+			const prevGameData = this._gameData[gameId] || {};
 			this._gameData[gameId] = Object.assign({}, prevGameData, game);
 
 			gotGameNames.push(`${game.id} → ${game.name}`);
-		});
+		}
 
 		if (gotGameNames.length) {
-			if (debug) this.logToConsole('TwitchMonitor', this.localizer._("Updating games data: ") + gotGameNames.join(', '), "debug");
+			if (debug) log('TwitchMonitor', this.localizer._("Updating games data: ") + gotGameNames.join(', '), "debug");
 		}
 
 		this._lastGameRefresh = moment();
@@ -152,20 +183,20 @@ class TwitchMonitor {
 		this._gameDb.put("game-list", this._gameData);
 	}
 
-	static handleStreamList(streams) {
+	static handleStreamList(streams: Stream[]): void {
 		// Index channel data & build list of stream IDs now online
-		let nextOnlineList = [];
-		let nextGameIdList = [];
+		const nextOnlineList: string[] = [];
+		const nextGameIdList: string[] = [];
 
-		streams.forEach((stream) => {
+		for (const stream of streams) {
 			const channelName = stream.user_name.toLowerCase();
 
 			if (stream.type === "live") {
 				nextOnlineList.push(channelName);
 			}
 
-			let userDataBase = this._userData[channelName] || {};
-			let prevStreamData = this.streamData[channelName] || {};
+			const userDataBase = this._userData[channelName] || {};
+			const prevStreamData = this.streamData[channelName] || {};
 
 			this.streamData[channelName] = Object.assign({}, userDataBase, prevStreamData, stream);
 			this.streamData[channelName].game = (stream.game_id && this._gameData[stream.game_id]) || null;
@@ -173,7 +204,7 @@ class TwitchMonitor {
 			if (stream.game_id) {
 				nextGameIdList.push(stream.game_id);
 			}
-		});
+		}
 
 		// Find channels that are now online, but were not before
 		let notifyFailed = false;
@@ -183,7 +214,7 @@ class TwitchMonitor {
 
 			if (this.activeStreams.indexOf(_chanName) === -1) {
 				// Stream was not in the list before
-				this.logToConsole('TwitchMonitor', this.localizer._("The stream is now online: ") + _chanName);
+				log('TwitchMonitor', this.localizer._("The stream is now online: ") + _chanName);
 			}
 
 			if (!this.handleChannelLiveUpdate(this.streamData[_chanName], true)) {
@@ -193,11 +224,11 @@ class TwitchMonitor {
 
 		// Find channels that are now offline, but were online before
 		for (let i = 0; i < this.activeStreams.length; i++) {
-			let _chanName = this.activeStreams[i];
+			const _chanName: string = this.activeStreams[i];
 
 			if (nextOnlineList.indexOf(_chanName) === -1) {
 				// Stream was in the list before, but no longer
-				this.logToConsole('TwitchMonitor', this.localizer._("The stream is now offline: ") + _chanName);
+				log('TwitchMonitor', this.localizer._("The stream is now offline: ") + _chanName);
 				this.streamData[_chanName].type = "detected_offline";
 				this.handleChannelOffline(this.streamData[_chanName]);
 			}
@@ -207,10 +238,10 @@ class TwitchMonitor {
 			// Notify OK, update list
 			this.activeStreams = nextOnlineList;
 		} else {
-			this.logToConsole('TwitchMonitor', this.localizer._("Cannot send the announcement, another try will be done on next update."));
+			log('TwitchMonitor', this.localizer._("Cannot send the announcement, another try will be done on next update."));
 		}
 
-		if (!this._watchingGameIds.hasEqualValues(nextGameIdList)) {
+		if (!hasEqualValues(this._watchingGameIds, nextGameIdList)) {
 			// We need to refresh game info
 			this._watchingGameIds = nextGameIdList;
 			this._pendingGameRefresh = true;
@@ -218,51 +249,31 @@ class TwitchMonitor {
 		}
 	}
 
-	static handleChannelLiveUpdate(streamData, isOnline) {
+	static handleChannelLiveUpdate(streamData: Stream, isOnline: boolean): boolean {
 		for (let i = 0; i < this.channelLiveCallbacks.length; i++) {
-			let _callback = this.channelLiveCallbacks[i];
+			const callback: CallbackFn = this.channelLiveCallbacks[i];
 
-			if (_callback) {
-				if (_callback(streamData, isOnline) === false) {
-					return false;
-				}
-			}
+			if (callback && callback(streamData, isOnline) === false) return false;
 		}
-
 		return true;
 	}
 
-	static handleChannelOffline(streamData) {
+	static handleChannelOffline(streamData: Stream): boolean {
 		this.handleChannelLiveUpdate(streamData, false);
 
 		for (let i = 0; i < this.channelOfflineCallbacks.length; i++) {
-			let _callback = this.channelOfflineCallbacks[i];
-
-			if (_callback) {
-				if (_callback(streamData) === false) {
-					return false;
-				}
-			}
+			const callback: OfflineCallbackFn = this.channelOfflineCallbacks[i];
+			if (callback && callback(streamData) === false) return false;
 		}
 
 		return true;
 	}
 
-	static onChannelLiveUpdate(callback) {
+	static onChannelLiveUpdate(callback: CallbackFn): void {
 		this.channelLiveCallbacks.push(callback);
 	}
 
-	static onChannelOffline(callback) {
+	static onChannelOffline(callback: OfflineCallbackFn): void {
 		this.channelOfflineCallbacks.push(callback);
 	}
 }
-
-TwitchMonitor.activeStreams = [];
-TwitchMonitor.streamData = {};
-
-TwitchMonitor.channelLiveCallbacks = [];
-TwitchMonitor.channelOfflineCallbacks = [];
-
-TwitchMonitor.MIN_POLL_INTERVAL_MS = 30000;
-
-export default TwitchMonitor;

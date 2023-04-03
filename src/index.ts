@@ -1,14 +1,15 @@
-import Artibot, { Global, Module } from "artibot";
+import Artibot, { Global, Module, log } from "artibot";
 import Localizer from "artibot-localizer";
 import { createRequire } from 'module';
 import path, { join } from "path";
 import { fileURLToPath } from "url";
+import { Client, GuildTextBasedChannel, EmbedBuilder } from "discord.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const require = createRequire(import.meta.url);
-const { version } = require('./package.json');
+const { version } = require('../package.json');
 
 import TwitchMonitor from "./twitchMonitor.js";
 import MiniDb from "./miniDb.js";
@@ -38,14 +39,32 @@ export default new Module({
 	]
 });
 
-/**
- * Main function for this module
- * @param {Artibot} artibot
- */
-async function execute(artibot) {
-	let { client, config, config: { lang }, log, createEmbed } = artibot;
-	const localizer = new Localizer({
-		filePath: join(__dirname, "locales.json"),
+export interface Stream {
+	user_name: string;
+	id: string;
+	type: string;
+	title: string;
+	game_id: string;
+	game_name: string;
+	thumbnail_url: string;
+	viewer_count: number;
+	started_at: string;
+	language: string;
+	is_mature: boolean;
+	profile_image_url: string;
+	game: Game;
+}
+
+export interface Game {
+	box_art_url: string;
+	name: string;
+}
+
+/** Main function for this module */
+async function execute(artibot: Artibot): Promise<void> {
+	const { client, config, config: { lang }, createEmbed } = artibot;
+	const localizer: Localizer = new Localizer({
+		filePath: join(__dirname, "../locales.json"),
 		lang
 	});
 
@@ -64,12 +83,12 @@ async function execute(artibot) {
 	// Check if token and client ID are correct
 	if (!config.twitch.private || typeof config.twitch.private != "object" || !config.twitch.private.clientSecret || !config.twitch.private.clientId) return invalidConfig();
 
-	await TwitchMonitor.init(log, localizer, config, artibot);
+	await TwitchMonitor.init(localizer, artibot);
 
-	let targetChannels = [];
+	let targetChannels: GuildTextBasedChannel[] = [];
 
-	let syncServerList = (logMembership) => {
-		targetChannels = DiscordChannelSync.getChannelList(client, config.twitch.notificationChannel, logMembership, log, localizer);
+	const syncServerList = (logMembership: boolean): void => {
+		targetChannels = DiscordChannelSync.getChannelList(client!, config.twitch.notificationChannel, logMembership, localizer);
 	};
 
 	// Init list of connected servers, and determine which channels we are announcing to
@@ -77,21 +96,22 @@ async function execute(artibot) {
 
 	// Activity updater
 	class StreamActivity {
-		/**
-		 * Registers a channel that has come online, and updates the user activity.
-		 */
-		static setChannelOnline(stream) {
+		static discordClient: Client<true>;
+		static onlineChannels: {
+			[key: string]: Stream;
+		};
+
+		/** Registers a channel that has come online, and updates the user activity. */
+		static setChannelOnline(stream: Stream) {
 			this.onlineChannels[stream.user_name] = stream;
 		}
 
-		/**
-		 * Marks a channel has having gone offline, and updates the user activity if needed.
-		 */
-		static setChannelOffline(stream) {
+		/** Marks a channel has having gone offline, and updates the user activity if needed. */
+		static setChannelOffline(stream: Stream) {
 			delete this.onlineChannels[stream.user_name];
 		}
 
-		static init(discordClient) {
+		static init(discordClient: Client<true>) {
 			this.discordClient = discordClient;
 			this.onlineChannels = {};
 		}
@@ -100,11 +120,11 @@ async function execute(artibot) {
 	// ---------------------------------------------------------------------------------------------------------------------
 	// Live events
 
-	let liveMessageDb = new MiniDb('live-messages', log, localizer);
-	let messageHistory = liveMessageDb.get("history") || {};
+	const liveMessageDb: MiniDb = new MiniDb('live-messages', localizer);
+	let messageHistory: any = liveMessageDb.get("history") || {};
 
-	TwitchMonitor.onChannelLiveUpdate((streamData) => {
-		const isLive = streamData.type === "live";
+	TwitchMonitor.onChannelLiveUpdate((streamData: Stream): boolean => {
+		const isLive: boolean = streamData.type === "live";
 
 		// Refresh channel list
 		try {
@@ -115,11 +135,11 @@ async function execute(artibot) {
 		StreamActivity.setChannelOnline(streamData);
 
 		// Generate message
-		const msgFormatted = localizer.__("**[[0]]** is live on Twitch!", { placeholders: [streamData.user_name] });
-		const msgEmbed = LiveEmbed.createForStream(streamData, config, localizer, createEmbed);
+		const msgFormatted: string = localizer.__("**[[0]]** is live on Twitch!", { placeholders: [streamData.user_name] });
+		const msgEmbed: EmbedBuilder = LiveEmbed.createForStream(streamData, localizer, artibot);
 
 		// Broadcast to all target channels
-		let anySent = false;
+		let anySent: boolean = false;
 
 		for (let i = 0; i < targetChannels.length; i++) {
 			const discordChannel = targetChannels[i];
@@ -137,7 +157,7 @@ async function execute(artibot) {
 								existingMsg.edit({
 									content: msgFormatted,
 									embeds: [msgEmbed]
-								}).then((message) => {
+								}).then(() => {
 									// Clean up entry if no longer live
 									if (!isLive) {
 										delete messageHistory[liveMsgDiscrim];
@@ -224,72 +244,33 @@ async function execute(artibot) {
 		return anySent;
 	});
 
-	TwitchMonitor.onChannelOffline((streamData) => {
-		// Update activity
-		StreamActivity.setChannelOffline(streamData);
-	});
-
-	// --- Common functions ------------------------------------------------------------------------------------------------
-	String.prototype.replaceAll = function (search, replacement) {
-		var target = this;
-		return target.split(search).join(replacement);
-	};
-
-	String.prototype.spacifyCamels = function () {
-		let target = this;
-
-		try {
-			return target.replace(/([a-z](?=[A-Z]))/g, '$1 ');
-		} catch (e) {
-			return target;
-		}
-	};
-
-	Array.prototype.joinEnglishList = function () {
-		let a = this;
-
-		try {
-			return [a.slice(0, -1).join(', '), a.slice(-1)[0]].join(a.length < 2 ? '' : ' and ');
-		} catch (e) {
-			return a.join(', ');
-		}
-	};
-
-	String.prototype.lowercaseFirstChar = function () {
-		let string = this;
-		return string.charAt(0).toUpperCase() + string.slice(1);
-	};
-
-	Array.prototype.hasEqualValues = function (b) {
-		let a = this;
-
-		if (a.length !== b.length) {
-			return false;
-		}
-
-		a.sort();
-		b.sort();
-
-		for (let i = 0; i < a.length; i++) {
-			if (a[i] !== b[i]) {
-				return false;
-			}
-		}
-
-		return true;
-	}
+	TwitchMonitor.onChannelOffline(StreamActivity.setChannelOffline);
 
 	// Keep our activity in the user list in sync
-	StreamActivity.init(client);
+	StreamActivity.init(client!);
 
 	// Begin Twitch API polling
 	TwitchMonitor.start();
 
-	client.on("guildCreate", () => {
+	client!.on("guildCreate", () => {
 		syncServerList(true);
 	});
 
-	client.on("guildDelete", () => {
+	client!.on("guildDelete", () => {
 		syncServerList(true);
 	});
+}
+
+/** Check if arrays have equal values */
+export function hasEqualValues(a: any[], b: any[]): boolean {
+	if (a.length !== b.length) return false;
+
+	a.sort();
+	b.sort();
+
+	for (let i = 0; i < a.length; i++) {
+		if (a[i] !== b[i]) return false;
+	}
+
+	return true;
 }

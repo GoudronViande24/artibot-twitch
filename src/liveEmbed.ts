@@ -1,14 +1,18 @@
-import moment from 'moment';
+import moment, { Moment } from 'moment';
 import humanizeDuration from "humanize-duration";
+import Localizer from 'artibot-localizer';
+import Artibot from 'artibot';
+import { EmbedBuilder } from "discord.js";
+import { Stream } from './index.js';
 
-class LiveEmbed {
-	static createForStream(streamData, config, localizer, createEmbed) {
-		const locale = config.lang;
+export default class LiveEmbed {
+	static createForStream(streamData: Stream, localizer: Localizer, artibot: Artibot): EmbedBuilder {
+		const locale = artibot.config.lang;
 		const isLive = streamData.type === "live";
-		config = config.twitch;
+		const config = artibot.config.twitch;
 		const allowBoxArt = config.showGameIcon;
 
-		let msgEmbed = createEmbed()
+		const msgEmbed: EmbedBuilder = artibot.createEmbed()
 			.setColor(isLive ? config.colors.live : config.colors.offline)
 			.setURL(`https://twitch.tv/${streamData.user_name.toLowerCase()}`);
 
@@ -43,7 +47,7 @@ class LiveEmbed {
 			// Add status
 			if (config.showViews) msgEmbed.addFields({
 				name: localizer._("Viewers"),
-				value: isLive ? localizer.__("Currently [[0]]", { placeholders: [streamData.viewer_count] }) : localizer._("The stream has ended."),
+				value: isLive ? localizer.__("Currently [[0]]", { placeholders: [streamData.viewer_count.toString()] }) : localizer._("The stream has ended."),
 				inline: true
 			});
 
@@ -59,12 +63,12 @@ class LiveEmbed {
 
 			// Add uptime
 			if (config.showUptime) {
-				let now = moment();
-				let startedAt = moment(streamData.started_at);
+				let now: Moment = moment();
+				let startedAt: Moment = moment(streamData.started_at);
 
 				msgEmbed.addFields({
 					name: localizer._("Online since"),
-					value: humanizeDuration(now - startedAt, {
+					value: humanizeDuration(now.unix() - startedAt.unix(), {
 						language: locale,
 						delimiter: ", ",
 						largest: 2,
@@ -79,5 +83,3 @@ class LiveEmbed {
 		return msgEmbed;
 	}
 }
-
-export default LiveEmbed;
